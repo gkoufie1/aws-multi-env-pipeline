@@ -162,3 +162,4 @@ effectively $0/month across all three environments at this scale. Running
 └── .github/workflows/
     └── pipeline.yml         # validate -> dev -> staging -> [approval] -> prod
 ```
+![image alt](https://github.com/gkoufie1/aws-multi-env-pipeline/blob/badca8330cd1c225d3678176139330e0d86d7cb0/deploy.png)

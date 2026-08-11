@@ -1,0 +1,174 @@
+name: Multi-Environment Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.8.5"
+
+jobs:
+
+  # ── Validate: runs on every PR and push. Nothing applies without this passing. ──
+  validate:
+    name: Validate & Policy Scan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init (no backend — validate only)
+        working-directory: envs/${{ matrix.environment }}
+        run: terraform init -backend=false
+
+      - name: Terraform validate
+        working-directory: envs/${{ matrix.environment }}
+        run: terraform validate
+
+      - name: Checkov policy scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: envs/${{ matrix.environment }}
+          config_file: .checkov.yaml
+          quiet: true
+          soft_fail: false
+
+  # ── Dev: auto-applies on push to main once validate passes. No human gate. ──
+  deploy-dev:
+    name: Deploy — dev
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform init
+        working-directory: envs/dev
+        run: terraform init
+
+      - name: Terraform apply
+        working-directory: envs/dev
+        run: terraform apply -auto-approve
+
+      - name: Capture outputs
+        working-directory: envs/dev
+        run: terraform output -json > ${{ github.workspace }}/outputs-dev.json
+
+      - name: Install smoke test dependencies
+        run: pip install boto3
+
+      - name: Run smoke test
+        run: python scripts/smoke_test.py --outputs outputs-dev.json --environment dev
+
+  # ── Staging: only runs if dev deployed AND passed its smoke test. Still no human gate. ──
+  deploy-staging:
+    name: Deploy — staging
+    needs: deploy-dev
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform init
+        working-directory: envs/staging
+        run: terraform init
+
+      - name: Terraform apply
+        working-directory: envs/staging
+        run: terraform apply -auto-approve
+
+      - name: Capture outputs
+        working-directory: envs/staging
+        run: terraform output -json > ${{ github.workspace }}/outputs-staging.json
+
+      - name: Install smoke test dependencies
+        run: pip install boto3
+
+      - name: Run smoke test
+        run: python scripts/smoke_test.py --outputs outputs-staging.json --environment staging
+
+  # ── Prod: only runs after staging passes. `environment: production` is the
+  #    real gate here — GitHub pauses this job for manual approval before it
+  #    starts, IF the "production" environment has required reviewers configured
+  #    in repo Settings -> Environments. See README for that one-time setup step. ──
+  deploy-prod:
+    name: Deploy — prod
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform init
+        working-directory: envs/prod
+        run: terraform init
+
+      - name: Terraform apply
+        working-directory: envs/prod
+        run: terraform apply -auto-approve
+
+      - name: Capture outputs
+        working-directory: envs/prod
+        run: terraform output -json > ${{ github.workspace }}/outputs-prod.json
+
+      - name: Install smoke test dependencies
+        run: pip install boto3
+
+      - name: Run smoke test
+        run: python scripts/smoke_test.py --outputs outputs-prod.json --environment prod

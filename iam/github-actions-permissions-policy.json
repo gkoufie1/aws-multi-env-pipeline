@@ -32,6 +32,7 @@
         "ec2:CreateVpc",
         "ec2:DeleteVpc",
         "ec2:DescribeVpcs",
+        "ec2:DescribeVpcAttribute",
         "ec2:ModifyVpcAttribute",
         "ec2:CreateSubnet",
         "ec2:DeleteSubnet",
@@ -52,6 +53,7 @@
         "ec2:CreateSecurityGroup",
         "ec2:DeleteSecurityGroup",
         "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSecurityGroupRules",
         "ec2:AuthorizeSecurityGroupEgress",
         "ec2:RevokeSecurityGroupEgress",
         "ec2:AuthorizeSecurityGroupIngress",
@@ -79,7 +81,10 @@
         "iam:PutRolePolicy",
         "iam:DeleteRolePolicy",
         "iam:GetRolePolicy",
-        "iam:ListRolePolicies"
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListInstanceProfilesForRole",
+        "iam:PassRole"
       ],
       "Resource": "arn:aws:iam::829241815848:role/*-baseline-vpc-flow-logs"
     },
@@ -89,7 +94,6 @@
       "Action": [
         "logs:CreateLogGroup",
         "logs:DeleteLogGroup",
-        "logs:DescribeLogGroups",
         "logs:PutRetentionPolicy",
         "logs:TagLogGroup",
         "logs:TagResource",
@@ -97,6 +101,12 @@
         "logs:ListTagsForResource"
       ],
       "Resource": "arn:aws:logs:us-east-1:829241815848:log-group:/aws/vpc-flow-logs/*"
+    },
+    {
+      "Sid": "FlowLogsCloudWatchLogGroupDescribe",
+      "Effect": "Allow",
+      "Action": "logs:DescribeLogGroups",
+      "Resource": "*"
     },
     {
       "Sid": "BaselineS3Bucket",
@@ -114,6 +124,16 @@
         "s3:PutLifecycleConfiguration",
         "s3:GetBucketTagging",
         "s3:PutBucketTagging",
+        "s3:GetBucketPolicy",
+        "s3:GetBucketAcl",
+        "s3:GetBucketCors",
+        "s3:GetBucketWebsite",
+        "s3:GetBucketLogging",
+        "s3:GetBucketNotification",
+        "s3:GetBucketRequestPayment",
+        "s3:GetAccelerateConfiguration",
+        "s3:GetReplicationConfiguration",
+        "s3:GetBucketObjectLockConfiguration",
         "s3:ListBucket"
       ],
       "Resource": [

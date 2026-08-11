@@ -88,6 +88,7 @@ Same module (`modules/vpc-baseline`), three different parameter sets:
 | VPC CIDR | `10.10.0.0/16` | `10.20.0.0/16` | `10.30.0.0/16` |
 | State key | `envs/dev/terraform.tfstate` | `envs/staging/terraform.tfstate` | `envs/prod/terraform.tfstate` |
 | Approval required | No | No | **Yes** |
+![image alt](https://github.com/gkoufie1/aws-multi-env-pipeline/blob/3888d2473808e4224e3c5ed7cb73a511520ea261/vpc.png)
 
 ## What's real vs. simplified
 

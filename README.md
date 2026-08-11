@@ -16,6 +16,7 @@ production require a human to actually look at it first. This project is
 about the *pipeline*, not the infrastructure — the baseline network it
 deploys is deliberately minimal (see [What's real vs. simplified](#whats-real-vs-simplified))
 so the promotion mechanics stay the focus.
+![image alt](https://github.com/gkoufie1/aws-multi-env-pipeline/blob/bf3694317e036464b856ffd4205d2361d3e268a7/environment.png)
 
 ## What "real gates" means here
 

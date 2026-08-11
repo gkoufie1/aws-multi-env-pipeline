@@ -114,6 +114,8 @@ would actually run:
   environment via GitHub Environment-level secrets, so a compromised dev
   credential can't touch prod.
 
+  ![image alt](https://github.com/gkoufie1/aws-multi-env-pipeline/blob/8fe8ab1d7410ba0260e13e0830265e481d4a32a1/s3.png)
+
 ## One-time setup
 
 **1. Bootstrap the state bucket** (once, before the first pipeline run):

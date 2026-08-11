@@ -6,6 +6,13 @@ on:
   push:
     branches: [main]
 
+# A new push should supersede an older one still waiting on prod approval,
+# not stack up behind it. Without this, every push piles up its own pending
+# approval instead of cancelling the stale one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   id-token: write
   contents: read
